@@ -1,0 +1,4 @@
+# Get rid of all locally cached documents, but keep the files folder
+files/**
+# Get rid of all logs and cached settings, but keep the logs folder
+logs/**
