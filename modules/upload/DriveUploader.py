@@ -80,11 +80,14 @@ class DriveUploader:
         credentials = store.get()
         # if the credentials don't exist or are invalid
         if not credentials or credentials.invalid:
+            print('Generating New Flow!')
             # initiate the authorization process
             flow = client.flow_from_clientsecrets(home_dir + AUTH_DIRECTORY_PATH + SECRET_CLIENT_NAME, UPLOAD_SCOPE)
+            print('Generated flow')
             # set the application requesting access to user data as the application name
             flow.user_agent = APPLICATION_NAME
-            credentials = tools.run_flow(flow, store)
+            flags=tools.argparser.parse_args(args=[])
+            credentials = tools.run_flow(flow, store, flags)
             print('Storing credentials to ' + credential_path)
         #return the authorized credentials
         return credentials

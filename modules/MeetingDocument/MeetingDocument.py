@@ -49,30 +49,39 @@ class MeetingDocument:
         #initialize list of all member variables for validity checking purposes in readyToWrite()
         self.varDict = []
         # get the author
+        print(argumentParser.getUploaderName())
         self.author = argumentParser.getUploaderName()
         self.varDict.append(self.author)
         # get the date
+        print(argumentParser.getDate())
         self.date = argumentParser.getDate()
         self.varDict.append(self.date)
         # get the beginning time
+        print(argumentParser.getStartTime())
         self.startTime = argumentParser.getStartTime()
         self.varDict.append(self.startTime)
         # get the ending time
+        print(argumentParser.getEndTime())
         self.endTime = argumentParser.getEndTime()
         self.varDict.append(self.endTime)
         # get the location
+        print(argumentParser.getLocation())
         self.location = argumentParser.getLocation()
         self.varDict.append(self.location)
         # get the students present
+        print(argumentParser.getStudents())
         self.students = argumentParser.getStudents()
         self.varDict.append(self.students)
         # get the students absent to the meeting
+        print(argumentParser.getAbsentStudents())
         self.absentStudents = argumentParser.getAbsentStudents()
         self.varDict.append(self.absentStudents)
         # get the proceedings
+        print(argumentParser.getProceedings())
         self.proceedings = argumentParser.getProceedings()
         self.varDict.append(self.proceedings)
         # get financial messages, if any
+        print(argumentParser.getFinances())
         self.finances = argumentParser.getFinances()
         self.varDict.append(self.finances)
         # retrieve the current timestamp to append to this document's new filename

@@ -6,6 +6,7 @@ ip = MeetingInputParser()
 ip.parseCommand()
 if(not ip.settingsQuery()):
     md = MeetingDocument.MeetingDocument(ip)
+    md.populate()
     if(not ip.noUpload()):
         du = DriveUploader()
         du.upload(md)

@@ -11,8 +11,7 @@ import datetime
 import calendar
 from meeting_minutes.modules.club.Club import Club
 from meeting_minutes.modules.input.week import getLastDate
-from .. import ui
-from . import InputError
+from oauth2client import tools
 
 #CONSTANT DATA INITIALIZATION
 NO_FINANCES_MESSAGE = 'No Financial Transactions to Report'
@@ -410,9 +409,11 @@ class MeetingInputParser:
     def parseCommand(self):
         # command the internal argument parser to parse the arguments the user has supplied
         # grab the argparser namespace
-        userSuppliedOptions = self.parser.parse_args()
+        userSuppliedOptions = self.parser.parse_known_args()[0]
+        print(userSuppliedOptions)
         self.settingsProvided = userSuppliedOptions.settingsProvided
         if(not self.settingsProvided):
+            print('Setting vars')
             self._setInstanceVariables(userSuppliedOptions)
             self._logNewMembers()
         else:
