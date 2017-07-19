@@ -55,48 +55,6 @@ class DriveUploader:
         self.authorized = False
         self.uploading = False
 
-    #retrieve the user's stored credentials.
-    #flow refers to the authorization process
-    """Gets valid user credentials from storage.
-
-            If nothing has been stored, or if the stored credentials are invalid,
-            the OAuth2 flow is completed to obtain the new credentials.
-
-            Returns:
-            Credentials, the obtained credential.
-    """
-    def _getCredentials(self):
-        # get the path to the home directory
-        home_dir = os.path.expanduser(HOME_DIR)
-        # get the path to the directory containing the credentials
-        credential_dir = os.path.join(home_dir, '.credentials')
-        credential_path = os.path.join(credential_dir, 'meeting_minutes_api_credentials.json')
-        # if the cred folder doesn't exist, create it
-        if not os.path.exists(credential_dir):
-            print('Making credential dir')
-            os.makedirs(credential_dir)
-        # now retrieve the credentials from Google's storage
-        store = Storage(credential_path)
-        credentials = store.get()
-        # if the credentials don't exist or are invalid
-        if not credentials or credentials.invalid:
-            print('Generating New Flow!')
-            # initiate the authorization process
-            flow = client.flow_from_clientsecrets(home_dir + AUTH_DIRECTORY_PATH + SECRET_CLIENT_NAME, UPLOAD_SCOPE)
-            print('Generated flow')
-            # set the application requesting access to user data as the application name
-            flow.user_agent = APPLICATION_NAME
-            flags=tools.argparser.parse_args(args=[])
-            credentials = tools.run_flow(flow, store, flags)
-            print('Storing credentials to ' + credential_path)
-        #return the authorized credentials
-        return credentials
-
-    #returns true if the application is authorized to proceed with the file upload
-    def _isAuthorized(self):
-        return self.authorized
-
-
     # upload the full contents of the MeetingDocument onto the user's google drive
     def upload(self, doc):
         # if not uploading already
@@ -122,7 +80,6 @@ class DriveUploader:
             google_file = drive_service.files().create(body=doc_metadata,
                                                        media_body=media,
                                                        fields='id').execute()
-
             self.uploading = False
 
     #Private Methods
@@ -138,3 +95,42 @@ class DriveUploader:
         self.authorized = True
         print('Authorization Successful.')
         return http
+
+    #retrieve the user's stored credentials.
+    #flow refers to the authorization process
+    """Gets valid user credentials from storage.
+
+            If nothing has been stored, or if the stored credentials are invalid,
+            the OAuth2 flow is completed to obtain the new credentials.
+
+            Returns:
+            Credentials, the obtained credential.
+    """
+    def _getCredentials(self):
+        # get the path to the home directory
+        home_dir = os.path.expanduser(HOME_DIR)
+        # get the path to the directory containing the credentials
+        credential_dir = os.path.join(home_dir, '.credentials')
+        credential_path = os.path.join(credential_dir, 'meeting_minutes_api_credentials.json')
+        # if the cred folder doesn't exist, create it
+        if not os.path.exists(credential_dir):
+            print('Making credential dir')
+            os.makedirs(credential_dir)
+        # now retrieve the credentials from Google's storage
+        store = Storage(credential_path)
+        credentials = store.get()
+        # if the credentials don't exist or are invalid
+        if not credentials or credentials.invalid:
+            # initiate the authorization process
+            flow = client.flow_from_clientsecrets(home_dir + AUTH_DIRECTORY_PATH + SECRET_CLIENT_NAME, UPLOAD_SCOPE)
+            # set the application requesting access to user data as the application name
+            flow.user_agent = APPLICATION_NAME
+            flags=tools.argparser.parse_args(args=[])
+            credentials = tools.run_flow(flow, store, flags)
+            print('Storing credentials to ' + credential_path)
+        #return the authorized credentials
+        return credentials
+
+    #returns true if the application is authorized to proceed with the file upload
+    def _isAuthorized(self):
+        return self.authorized

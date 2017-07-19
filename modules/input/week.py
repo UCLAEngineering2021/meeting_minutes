@@ -12,8 +12,6 @@ def getWeekday(date):
 def getLastDate(day):
     today = datetime.datetime.today()
     todayWeekday = today.weekday()
-    print(todayWeekday)
-    print(day)
     offset = todayWeekday - Weekday[day]
     if(offset < 0):
         offset = DAYS_IN_WEEK - abs(offset)

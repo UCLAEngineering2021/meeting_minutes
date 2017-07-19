@@ -98,7 +98,7 @@ class MeetingInputParser:
     #
     #proceedings: a string describing the meeting's events.  This is the meat of the report
     #
-    #uploaderName: the name of the uploader
+    #author: the name of the uploader
     #
     #parser: internal built in argument parser
     #
@@ -113,7 +113,7 @@ class MeetingInputParser:
         self.parser.add_argument('--date', '-d', action='store', dest='date', help='The date of the meeting.  Should be formatted like MM/DD/YY')
         self.parser.add_argument('--start', '-s', action='store', dest='startTime', help="The meeting's start time.  Formatted like HH:MM (Military Time)")
         self.parser.add_argument('--end', '-e', action='store', dest='endTime', help="The meeting's end time.  Formatted like HH:MM (Military Time)")
-        self.parser.add_argument('--uploader', '-u', action='store', dest='uploaderName', help='The name of the person uploading the meeting minutes')
+        self.parser.add_argument('--author', '-u', action='store', dest='author', help='The name of the person uploading the meeting minutes')
         self.parser.add_argument('--proceedings', '-p', action='store', dest='proceedings', help='The events of the meeting')
         self.parser.add_argument('--finances', '-f', action='store', dest='finances', help='Financial matters that occurred during the meeting')
         self.parser.add_argument('--location', '-l', action='store', dest='location', help="The meeting's location")
@@ -134,22 +134,23 @@ class MeetingInputParser:
         self.finances = ''
         self.location = ''
         self.proceedings = ''
-        self.uploaderName = ''
+        self.author = ''
         self.students = []
         self.absentStudents = []
         self.settingsProvided = False
         self.upload = True
 
-    # ALL SET COMMANDS CHECK THE VALIDITY
-    # OF THEIR INPUTS BY DESIGN
-
-    #BEGIN PRIVATE METHODS
 
     def settingsQuery(self):
         return self.settingsProvided
 
     def noUpload(self):
         return (not self.upload)
+
+    # ALL SET COMMANDS CHECK THE VALIDITY
+    # OF THEIR INPUTS BY DESIGN
+
+    #BEGIN PRIVATE METHODS
 
     def _setDate(self, date):
         club = Club()
@@ -217,16 +218,16 @@ class MeetingInputParser:
         # Set the proceedings member data
         self.proceedings = proceedings
 
-    def _setUploaderName(self, uploaderName):
+    def _setAuthor(self, author):
         club = Club()
-        if(not _stringValid(uploaderName, False) and club.settingDefined(Club.AUTHOR_KEY_VALUE)):
-            uploaderName = club.getAuthor()
-        # Check that uploaderName is a valid string
-        while(not _stringValid(uploaderName, False)):
+        if(not _stringValid(author, False) and club.settingDefined(Club.AUTHOR_KEY_VALUE)):
+            author = club.getAuthor()
+        # Check that author is a valid string
+        while(not _stringValid(author, False)):
         # If given an empty string, or nothing, convert to 'Unknown Author'
-            uploaderName = AUTHOR_UNKNOWN_MESSAGE
+            author = AUTHOR_UNKNOWN_MESSAGE
         # Set the member Data
-        self.uploaderName = uploaderName
+        self.author = author
 
     def _setStudents(self, students):
         # check that students is a valid string array
@@ -248,19 +249,74 @@ class MeetingInputParser:
         if(startTime is not None and endTime is not None):
             meetingStartTime = startTime
             meetingEndTime = endTime
-            while True:
-                try:
-                    meetingStartTime = datetime.datetime.strptime(meetingStartTime, '%H:%M')
-                    meetingEndTime = datetime.datetime.strptime(meetingEndTime, '%H:%M')
-                except (TypeError, ValueError) as err:
-                    warnings.warn('Times inputted were invalid!', UserWarning)
-                # if the meeting started later than it ended, then there has been an input error
-                if(meetingStartTime <= meetingEndTime):
-                    break
-                # if the start time is greater than the end time, let's ask for some valid input
-                print('Your end time occurs before your start time! Refusing to continue!')
-                meetingStartTime = input('Enter the meeting start time.  It should occur before the end time, and be a properly formatted string(HH:MM) (Military Time) : ')
-                meetingEndTime = input('Enter the meeting end time.  It should occur after the start time, and be a properly formatted string(HH:MM) (Military Time) : ')
+            try:
+                meetingStartTime = datetime.datetime.strptime(meetingStartTime, '%H:%M')
+                meetingEndTime = datetime.datetime.strptime(meetingEndTime, '%H:%M')
+            except (TypeError, ValueError) as err:
+                warnings.warn('Times inputted were invalid!', UserWarning)
+                return False
+            # if the meeting started later than it ended, then there has been an input error
+            if(meetingStartTime <= meetingEndTime):
+                return True
+            else:
+                warnings.warn('Start Time occurs after End Time! Invalid start time and end time.')
+                print('Start Time: ' + str(datetime.datetime.strftime(meetingStartTime, '%H:%M')))
+                print('End Time: ' + str(datetime.datetime.strftime(meetingEndTime, '%H:%M')))
+                return False
+
+    def _logNewMembers(self):
+        # initialize a club object
+        club = Club()
+        # get a list of the new members of the club
+        newMembers = self.getNewMembers()
+        # if there are any, write these new members into settings
+        if(len(newMembers) > 0):
+            club.addToSettings(club.MEMBERS_KEY_VALUE, newMembers)
+
+    def _setInstanceVariables(self, cliOptions):
+        # ALL SET COMMANDS CHECK THE VALIDITY
+        # OF THEIR INPUTS BY DESIGN
+        self.upload = not cliOptions.noUpload
+        # set the meeting's date
+        self._setDate(cliOptions.date)
+        # set the meeting's start time
+        self._setStartTime(cliOptions.startTime)
+        # set the meeting's end time
+        self._setEndTime(cliOptions.endTime)
+        # check that the end time is not before the start time
+        while(not self._startTimeBeforeEndTime(self.getStartTime(), self.getEndTime())):
+            newStartTime = input("Enter a start time that occurs before the meeting's end time: ")
+            newEndTime = input("Enter the meeting's end time.  The meeting should end after it starts: ")
+            self._setStartTime(newStartTime)
+            self._setEndTime(newEndTime)
+        # set the financial transactions
+        self._setFinances(cliOptions.finances)
+        # set the meeting's location
+        self._setLocation(cliOptions.location)
+        # set the events of the meeting
+        self._setProceedings(cliOptions.proceedings)
+        # set the name of the meeting note's author
+        self._setAuthor(cliOptions.author)
+        # put down the students that attended the meeting
+        self._setStudents(cliOptions.students)
+
+    def _settingValid(self, key, value):
+        club = Club()
+        # validate it using a time check
+        formattedOptionValue = value.strip().lower()
+        formattedKey = key.strip().lower()
+        if('time' in formattedKey):
+            if(_timeValid(formattedOptionValue, True)):
+                if(formattedKey == 'club_starttime' and club.settingDefined('endTime')):
+                    endTime = club.getEndTime()
+                    return self._startTimeBeforeEndTime(formattedOptionValue, endTime)
+                elif(formattedKey == 'club_endtime' and club.settingDefined('startTime')):
+                    startTime = club.getStartTime()
+                    return self._startTimeBeforeEndTime(startTime, formattedOptionValue)
+                else:
+                    return _timeValid(formattedOptionValue, True)
+        else:
+            return _stringValid(formattedOptionValue, False)
 
     #END PRIVATE METHODS
 
@@ -282,8 +338,8 @@ class MeetingInputParser:
     def getProceedings(self):
         return self.proceedings
 
-    def getUploaderName(self):
-        return self.uploaderName
+    def getAuthor(self):
+        return self.author
 
     def getStudents(self):
         return self.students
@@ -349,45 +405,6 @@ class MeetingInputParser:
             # return everyone that was present at the meeting
             return studentsPresent
 
-    def _logNewMembers(self):
-        # initialize a club object
-        club = Club()
-        # get a list of the new members of the club
-        newMembers = self.getNewMembers()
-        # if there are any, write these new members into settings
-        if(len(newMembers) > 0):
-            club.addToSettings(club.MEMBERS_KEY_VALUE, newMembers)
-
-    def _setInstanceVariables(self, cliOptions):
-        # ALL SET COMMANDS CHECK THE VALIDITY
-        # OF THEIR INPUTS BY DESIGN
-        self.upload = not cliOptions.noUpload
-        # set the meeting's date
-        self._setDate(cliOptions.date)
-        # set the meeting's start time
-        self._setStartTime(cliOptions.startTime)
-        # set the meeting's end time
-        self._setEndTime(cliOptions.endTime)
-        # set the financial transactions
-        self._setFinances(cliOptions.finances)
-        # set the meeting's location
-        self._setLocation(cliOptions.location)
-        # set the events of the meeting
-        self._setProceedings(cliOptions.proceedings)
-        # set the name of the meeting note's author
-        self._setUploaderName(cliOptions.uploaderName)
-        # put down the students that attended the meeting
-        self._setStudents(cliOptions.students)
-
-    def _settingValid(self, key, value):
-        # validate it using a time check
-        formattedOptionValue = value.strip().lower()
-        formattedKey = key.strip().lower()
-        if('time' in formattedKey):
-            return _timeValid(formattedOptionValue, True)
-        else:
-            return _stringValid(formattedOptionValue, False)
-
     def configureSettings(self, club, cliOptions):
         optionsDict = vars(cliOptions)
         for key in optionsDict:
@@ -410,10 +427,8 @@ class MeetingInputParser:
         # command the internal argument parser to parse the arguments the user has supplied
         # grab the argparser namespace
         userSuppliedOptions = self.parser.parse_known_args()[0]
-        print(userSuppliedOptions)
         self.settingsProvided = userSuppliedOptions.settingsProvided
         if(not self.settingsProvided):
-            print('Setting vars')
             self._setInstanceVariables(userSuppliedOptions)
             self._logNewMembers()
         else:

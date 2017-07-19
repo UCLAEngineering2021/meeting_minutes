@@ -71,20 +71,21 @@ class Settings:
         home_dir = os.path.expanduser(HOME_DIR)
         full_file_path = home_dir + SETTINGS_FILE_PATH + SETTINGS_FILE_NAME
         setting = setting.strip()
-        with open(full_file_path, 'r') as f:
-            # read all the lines in the file, and store them into a list lines
-            lines = f.readlines()
-            for line in lines:
-                if((setting + SETTINGS_ASSIGNMENT_OP) in line):
-                    # string.find() should never return -1, since it was found previously in order to enter this loop
-                    settingValue = line[(line.find(SETTINGS_ASSIGNMENT_OP) + 1):].strip()
-                    # if the value is a list
-                    if(settingValue.find(LIST_DELIMITER) is not -1):
-                        settingValues = settingValue.split(LIST_DELIMITER)
-                        for i in range(0, len(settingValues)):
-                            settingValues[i] = settingValues[i].strip()
-                        return settingValues
-                    return settingValue
+        if(os.path.isfile(full_file_path)):
+            with open(full_file_path, 'r') as f:
+                # read all the lines in the file, and store them into a list lines
+                lines = f.readlines()
+                for line in lines:
+                    if((setting + SETTINGS_ASSIGNMENT_OP) in line):
+                        # string.find() should never return -1, since it was found previously in order to enter this loop
+                        settingValue = line[(line.find(SETTINGS_ASSIGNMENT_OP) + 1):].strip()
+                        # if the value is a list
+                        if(settingValue.find(LIST_DELIMITER) is not -1):
+                            settingValues = settingValue.split(LIST_DELIMITER)
+                            for i in range(0, len(settingValues)):
+                                settingValues[i] = settingValues[i].strip()
+                            return settingValues
+                        return settingValue
         return None
 
     # read selected for a specific key returns the corresponding value from the instance variable dict
